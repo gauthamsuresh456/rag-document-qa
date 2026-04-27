@@ -1,26 +1,35 @@
 from dotenv import load_dotenv
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from src.logger import logger
+from src.exception import CustomException
+import sys
 
 load_dotenv()
 
-#loading the pdf
-loader = PyPDFLoader("test.pdf")
-pages = loader.load()
+def load_and_chunk(pdf_path:str, chunk_size:int=500, chunk_overlap:int=50):
+    try:
+        logger.info(f"Loading PDF: {pdf_path}")
+        loader = PyPDFLoader(pdf_path)
+        pages= loader.load()
+        logger.info(f"Loaded {len(pages)} pages")
+        
+        splitter = RecursiveCharacterTextSplitter(
+            chunk_size=500,  #Max characters per chunk
+            chunk_overlap=50,  #Overlap between chunk so context isnt lost
+            separators=["\n\n","\n","."," "]  #split on this order            
+        )
+        chunks =  splitter.split_documents(pages)
+        
+        logger.info(f"Split into {len(chunks)} chunks")
+        return chunks
+    except Exception as e:
+        logger.info(f"Failed to load or chunk document")
+        raise CustomException(e, sys)
 
-#inspect what you got 
-#To inspect we are gonna just take one page
-print(f"Number of pages: {len(pages)}")
-print(f"Contents from the first Page: \n {pages[0].page_content[:500]}")
-print(f"Metadata:{pages[0].metadata}")
-
-splitter = RecursiveCharacterTextSplitter(
-    chunk_size=500,  #Max characters per chunk
-    chunk_overlap=50,  #Overlap between chunk so context isnt lost
-    separators=["\n\n","\n","."," "]  #split on this order
-)
-chunks = splitter.split_documents(pages)
-
-print(f"Number of chunks: {len(chunks)}")
-print(f"Contents from the first Page: \n {chunks[0].page_content }") 
-print(f"Contents from the second Page: \n {chunks[1].page_content }") 
+if __name__ == "__main__":
+    chunks = load_and_chunk("test.pdf")
+    print(f"Number of chunks: {len(chunks)}")
+    print(f"Contents from the first Page: \n {chunks[0].page_content }") 
+    print(f"Contents from the second Page: \n {chunks[1].page_content }") 
+    
