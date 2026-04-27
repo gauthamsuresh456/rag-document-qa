@@ -1,4 +1,9 @@
 import pytest
+import sys
+import os
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from loader import load_and_chunk
 
 def test_load_and_chunk_returns_list():
